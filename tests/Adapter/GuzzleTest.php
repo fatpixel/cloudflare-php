@@ -1,6 +1,15 @@
 <?php
 
+namespace Cloudflare\API\Test\Adapter;
+
+use Cloudflare\API\Adapter\Guzzle;
+use Cloudflare\API\Adapter\JSONException;
 use Cloudflare\API\Adapter\ResponseException;
+use Cloudflare\API\Auth\Auth;
+use GuzzleHttp\Exception\RequestException;
+use GuzzleHttp\Psr7\Response;
+use PHPUnit\Framework\TestCase;
+use ReflectionClass;
 
 class GuzzleTest extends TestCase
 {
@@ -8,14 +17,12 @@ class GuzzleTest extends TestCase
 
     public function setUp(): void
     {
-        $auth = $this->getMockBuilder(\Cloudflare\API\Auth\Auth::class)
-            ->setMethods(['getHeaders'])
-            ->getMock();
+        $authMock = $this->createMock(Auth::class);
 
-        $auth->method('getHeaders')
+        $authMock->method('getHeaders')
             ->willReturn(['X-Testing' => 'Test']);
 
-        $this->client = new \Cloudflare\API\Adapter\Guzzle($auth, 'https://httpbin.org/');
+        $this->client = new Guzzle($authMock, 'https://httpbin.org/');
     }
 
     public function testGet()
@@ -85,8 +92,41 @@ class GuzzleTest extends TestCase
 
     public function testNotFound()
     {
+        $class = new ReflectionClass(Guzzle::class);
+        $method = $class->getMethod('checkError');
+        $method->setAccessible(true);
+
+        $body =
+            '{
+                "result": null,
+                "success": false,
+                "errors": [{"code":1003,"message":"Invalid or missing zone id."}],
+                "messages": []
+             }'
+        ;
+        $response = new Response(200, [], $body);
+
         $this->expectException(ResponseException::class);
-        $this->client->get('https://httpbin.org/status/404');
+        $method->invokeArgs($this->client, [$response]);
+
+        $body =
+            '{
+                "result": null,
+                "success": false,
+                "errors": [],
+                "messages": []
+             }'
+        ;
+        $response = new Response(200, [], $body);
+
+        $this->expectException(ResponseException::class);
+        $method->invokeArgs($this->client, [$response]);
+
+        $body = 'this isnt json.';
+        $response = new Response(200, [], $body);
+
+        $this->expectException(JSONException::class);
+        $method->invokeArgs($this->client, [$response]);
     }
 
     public function testServerError()

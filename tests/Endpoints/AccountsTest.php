@@ -1,6 +1,10 @@
 <?php
 
+namespace Cloudflare\API\Test\Endpoints;
+
+use Cloudflare\API\Adapter\Adapter;
 use Cloudflare\API\Endpoints\Accounts;
+use Cloudflare\API\Test\TestCase;
 
 /**
  * User: kanasite
@@ -13,7 +17,7 @@ class AccountsTest extends TestCase
     {
         $response = $this->getPsr7JsonResponseForFixture('Endpoints/listAccounts.json');
 
-        $mock = $this->getMockBuilder(\Cloudflare\API\Adapter\Adapter::class)->getMock();
+        $mock = $this->createMock(Adapter::class);
         $mock->method('get')->willReturn($response);
 
         $mock->expects($this->once())

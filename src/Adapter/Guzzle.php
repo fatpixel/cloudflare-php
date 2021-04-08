@@ -4,7 +4,6 @@ namespace Cloudflare\API\Adapter;
 
 use Cloudflare\API\Auth\Auth;
 use GuzzleHttp\Client;
-use GuzzleHttp\Exception\RequestException;
 use Psr\Http\Message\ResponseInterface;
 
 class Guzzle implements Adapter
